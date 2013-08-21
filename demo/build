@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "// fetch.js" > controller.js
+cat ..//fetch.js >> controller.js
+echo "// cache.js" >> controller.js
+cat ../cache.js >> controller.js
+echo "// testcontroller.js" >> controller.js
+cat testcontroller.js >> controller.js
