@@ -4,6 +4,10 @@ if (!('SameOriginResponse' in this))
     SameOriginResponse = function() { };
 
 function networkFetch(urlOrRequest) {
+    function createBlob(msg, type) {
+        type = type ? type : "text/plain";
+        return new Blob([msg], {"type" : type});
+    }
     return new Promise(function(resolver) {
         var url;
         var method = 'GET';

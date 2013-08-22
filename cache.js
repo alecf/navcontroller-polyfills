@@ -138,7 +138,11 @@ Cache.prototype._get = function(key) {
         var req = cache.db.transaction(cache.name)
                 .objectStore(cache.name).get(key);
         req.onsuccess = function(e) {
-            resolver.resolve(e.target.result);
+            var result = {
+                request: e.target.result.request,
+                response: cache._makeResponse(e.target.result.response)
+            };
+            resolver.resolve(result);
         };
         req.onerror = function(e) {
             resolver.reject("Error in _get for " + key + ": " + e.name);
@@ -188,26 +192,45 @@ Cache.prototype.getKeys = function() {
     });
 };
 
+Cache.prototype._makeResponse = function (responseObj) {
+    var response = new SameOriginResponse();
+    for (var k in responseObj)
+        response[k] = responseObj[k];
+    if ('setHeader' in response) {
+        responseObj.headers.forEach(function(header) {
+            response.setHeader(header[0], header[1]);
+        });
+    }
+    if ('setBody' in response) {
+        response.setBody(response.body);
+    }
+    return response;
+};
+
 // Gives a response object suitable for passing to respondWith()
 Cache.prototype.match = function(url) {
-    return this.ready().then(function(cache) {
-        return cache._get(url).then(function(result) {
-            return result.response;
+    var cache = this;
+    return this.ready()
+        .then(function(cache) {
+            return cache._get(url).response;
         });
-    });
 };
 
 // Gets the full entry, including a request and response object
 Cache.prototype.get = function(url) {
-    return this.ready().then(function(cache) {
-        return cache._get(url);
-    });
-}
+    var cache = this;
+    return this.ready()
+        .then(function(cache) {
+            return cache._get(url);
+        });
+};
 
 // This returns a callback which binds the request to the response
 Cache.prototype._setResponse = function(request) {
     var cache = this;
+    request = JSON.parse(JSON.stringify(request));
     return function(response) {
+        response = JSON.parse(JSON.stringify(response));
         return cache._set(request.url,
                           { request: request, response: response });
     };
@@ -239,6 +262,8 @@ Cache.prototype.add = function(/* request, request, request, ...*/) {
 Cache.prototype.addResponse = function(urlOrRequest, response) {
     var request = _getRequest(urlOrRequest);
     return this.ready().then(function(cache) {
+        request = JSON.parse(JSON.stringify(request));
+        response = JSON.parse(JSON.stringify(response));
         cache._set(request.url, { request: request, response: response });
     });
 };
