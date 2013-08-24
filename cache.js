@@ -46,9 +46,12 @@ CacheList.prototype.set = function(cache_name, cache) {
 // translates a string or a request object into an object with a .url
 // property
 function _getRequest(urlOrRequest) {
-    if (urlOrRequest.url) return urlOrRequest;
-    var request = new Request();
-    request.url = urlOrRequest;
+    if (urlOrRequest.url) {
+        urlOrRequest.url = absolutizeURI(location.toString(), urlOrRequest.url);
+        return urlOrRequest;
+    }
+    var request = new SameOriginResponse();
+    request.url = absolutizeURI(location.toString(), urlOrRequest);
     request.method = 'GET';
     return request;
 }
@@ -132,12 +135,21 @@ Cache.prototype._open = function () {
 
 
 // _get and _set are generic wrappers around idb, that assume the db is open and ready.
-Cache.prototype._get = function(key) {
+Cache.prototype._get = function(url) {
     var cache = this;
+    url = _getRequest(url).url;
     return new Promise(function(resolver) {
-        var req = cache.db.transaction(cache.name)
-                .objectStore(cache.name).get(key);
+        try {
+            var req = cache.db.transaction(cache.name)
+                    .objectStore(cache.name).get(url);
+        } catch(ex) {
+            resolver.reject("Couldn't load url '" + url + "': " + ex);
+        }
         req.onsuccess = function(e) {
+            if (!e.target.result) {
+                resolver.reject("URL not found: " + url);
+                return;
+            }
             var result = {
                 request: e.target.result.request,
                 response: cache._makeResponse(e.target.result.response)
@@ -145,7 +157,7 @@ Cache.prototype._get = function(key) {
             resolver.resolve(result);
         };
         req.onerror = function(e) {
-            resolver.reject("Error in _get for " + key + ": " + e.name);
+            resolver.reject("Error in _get for " + url + ": " + e.name);
         };
     });
 };
@@ -196,13 +208,16 @@ Cache.prototype._makeResponse = function (responseObj) {
     var response = new SameOriginResponse();
     for (var k in responseObj)
         response[k] = responseObj[k];
+    var content_type;
     if ('setHeader' in response) {
         responseObj.headers.forEach(function(header) {
+            if (header[0].toLowerCase() == 'content-type')
+                content_type = header[1];
             response.setHeader(header[0], header[1]);
         });
     }
     if ('setBody' in response) {
-        response.setBody(response.body);
+        response.setBody(createBlob(response.body, content_type));
     }
     return response;
 };
@@ -212,7 +227,18 @@ Cache.prototype.match = function(url) {
     var cache = this;
     return this.ready()
         .then(function(cache) {
-            return cache._get(url).response;
+            return cache._get(url);
+        }).then(function(entry) {
+            return entry.response;
+        })
+        .catch(function(ex) {
+            var response = new SameOriginResponse();
+            response.statusCode = 404;
+            response.statusText = "Not Found: " + ex;
+            lastex = ex;
+            response.method = '';
+            response.setBody("Not found in cache: " + ex, "text/plain");
+            return response;
         });
 };
 
