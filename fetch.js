@@ -4,10 +4,6 @@ if (!('SameOriginResponse' in this))
     SameOriginResponse = function() { };
 
 function networkFetch(urlOrRequest) {
-    function createBlob(msg, type) {
-        type = type ? type : "text/plain";
-        return new Blob([msg], {"type" : type});
-    }
     return new Promise(function(resolver) {
         var url;
         var method = 'GET';
@@ -36,17 +32,15 @@ function networkFetch(urlOrRequest) {
                     response.method = method;
 
                     var headers = xhr.getAllResponseHeaders().split('\n'); //probably should be a dict?
-                    response.headers = headers;
-                    if ('setHeader' in response) {
-                        for (var i = 0; i < headers.length; ++i) {
-                            if (!headers[i])
-                                continue;
-                            var kv = response.headers[i].split(':');
-                            if (kv && kv.length > 1) {
+                    response.headers = [];
+                    for (var i = 0; i < headers.length; ++i) {
+                        if (!headers[i])
+                            continue;
+                        var kv = headers[i].split(':');
+                        if (kv && kv.length > 1) {
+                            if ('setHeader' in response)
                                 response.setHeader(kv[0], kv[1].slice(1).trim());
-                                LOG.push("Setting header = " + kv[0] +
-                                         ": '" + kv[1].slice(1).trim() + "'");
-                            }
+                            response.headers.push([kv[0], kv[1].slice(1).trim()]);
                         }
                     }
                     response.body = xhr.response;
@@ -59,4 +53,9 @@ function networkFetch(urlOrRequest) {
             }
         };
     });
+}
+
+function createBlob(msg, type) {
+    type = type ? type : "text/plain";
+    return new Blob([msg], {"type" : type});
 }

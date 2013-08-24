@@ -1,0 +1,94 @@
+<html>
+<head>
+    <style type="text/css">
+      .action {
+          padding: 2px;
+          margin: 2px;
+          border: 2px solid #aaa;
+          border-radius: 3px;
+          }
+    </style>
+    <script src="../fetch.js"></script>
+<script>
+var urlInput;
+
+function onLoad() {
+  urlInput = document.getElementById("urlInput");
+}
+
+function getUrlToGet() {
+  return urlInput.value;
+}
+
+var xhr;
+
+function normalAsyncXhr() {
+  var url = getUrlToGet();
+  document.querySelector('#response-status').innerText =
+        document.querySelector('#response-headers').innerText =
+        document.querySelector('#response-body').innerText = '[loading]';
+  xhr = new XMLHttpRequest();
+  xhr.addEventListener("error", function(event) {
+      console.log("error: ", event);
+      document.querySelector('#response-status').innerText =
+          document.querySelector('#response-headers').innerText =
+          document.querySelector('#response-body').innerText = 'error: ' + event;
+      });
+  xhr.addEventListener("abort", function(event) {
+      console.log("error: ", event);
+      document.querySelector('#response-status').innerText =
+          document.querySelector('#response-headers').innerText =
+          document.querySelector('#response-body').innerText = 'abort: ' + event;
+      });
+  xhr.open("GET", url, true);
+  xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4) {
+          document.querySelector('#response-status').innerText = xhr.statusText;
+          document.querySelector('#response-headers').innerText = xhr.getAllResponseHeaders();
+          document.querySelector('#response-body').innerText = xhr.responseText;
+      }
+      };
+  xhr.send();
+}
+
+      function register() {
+          var pattern = document.querySelector('#pattern').value;
+          var controller = document.querySelector('#controller').value;
+          navigator.registerController(pattern, controller).then(function(e) {
+              document.querySelector('#status').innerText = "registered";
+          });
+      }
+
+      function unregister() {
+          var pattern = document.querySelector('#pattern').value;
+          navigator.unregisterController(pattern)
+              // .then(function(e) {
+              //     document.querySelector('#status').innerText = "unregistered";
+              // });
+      }
+
+</script>
+</head>
+<body onload="onLoad()">
+    <div id="registration" class="action">
+        <div id="status">registering controller..[this will update when the promise finishes]</div>
+
+        <div>Pattern to register: <input type="text" size="50" name="pattern" id="pattern" value="*"></div>
+        <div>Controller path: <input type="text" size="50" name="controller" id="controller" value="controller.js"></div>
+
+        <div><a href="javascript:register()">register()</a></div>
+        <div><a href="javascript:unregister()">unregister()</a></div>
+    </div>
+
+    <div id="fetching" class="action">
+        URL to fetch via XHR: <input type="text" size="50" name="urlInput" id="urlInput">
+        <p><a href="javascript:normalAsyncXhr()">normalAsyncXhr('url')</a></p>
+        <p>Status:</p>
+        <pre id="response-status"></pre>
+        <p>Headers:</p>
+        <pre id="response-headers"></pre>
+        <p>Response body:</p>
+        <pre id="response-body"></<pre>
+                                     </div>
+</body>
+</html>
