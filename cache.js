@@ -254,11 +254,20 @@ Cache.prototype.get = function(url) {
 // This returns a callback which binds the request to the response
 Cache.prototype._setResponse = function(request) {
     var cache = this;
-    request = JSON.parse(JSON.stringify(request));
+    var requestObj = {};
+    for (var k in request) {
+        if (typeof request[k] != 'function')
+            requestObj[k] = request[k];
+    }
     return function(response) {
-        response = JSON.parse(JSON.stringify(response));
+        // the main object isn't clonable, but its subparts are
+        var responseObj = {};
+        for (var k in response) {
+            if (typeof response[k] != 'function')
+                responseObj[k] = response[k];
+        }
         return cache._set(request.url,
-                          { request: request, response: response });
+                          { request: requestObj, response: responseObj });
     };
 };
 
