@@ -16,6 +16,7 @@ function networkFetch(urlOrRequest) {
             body = urlOrRequest.body;
         }
         var xhr = new XMLHttpRequest();
+        xhr.responseType = "arraybuffer";
         xhr.open(method, url, true);
         if (body)
             xhr.send(body);
