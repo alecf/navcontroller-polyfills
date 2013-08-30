@@ -204,6 +204,7 @@ Cache.prototype.getKeys = function() {
     });
 };
 
+// Creates a SameOriginRequest from an object that came out of IDB
 Cache.prototype._makeResponse = function (responseObj) {
     var response = new SameOriginResponse();
     for (var k in responseObj)
@@ -231,13 +232,16 @@ Cache.prototype.match = function(url) {
         }).then(function(entry) {
             return entry.response;
         })
+        // not sure we want a 'catch' at all here, but the
+        // current implementation of respondWith() doesn't really
+        // deal with failure.
         .catch(function(ex) {
             var response = new SameOriginResponse();
             response.statusCode = 404;
             response.statusText = "Not Found: " + ex;
             lastex = ex;
             response.method = '';
-            response.setBody("Not found in cache: " + ex, "text/plain");
+            response.setBody(createBlob("Not found in cache: " + ex, "text/plain"));
             return response;
         });
 };
