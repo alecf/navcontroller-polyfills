@@ -43,6 +43,17 @@ CacheList.prototype.set = function(cache_name, cache) {
     return cache;
 };
 
+CacheList.prototype.values = function() {
+    var cacheList = this;
+    return Object.keys(cacheList.caches).map(function(key) {
+        return cacheList.caches[key];
+    });
+};
+
+CacheList.prototype.keys = function() {
+    return Object.keys(this.caches);
+};
+
 // translates a string or a request object into an object with a .url
 // property
 function _getRequest(urlOrRequest) {
