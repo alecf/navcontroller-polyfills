@@ -317,3 +317,5 @@ Cache.prototype.addResponse = function(urlOrRequest, response) {
         cache._set(request.url, { request: request, response: response });
     });
 };
+
+this.caches = new CacheList();
