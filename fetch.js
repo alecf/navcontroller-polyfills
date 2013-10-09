@@ -1,9 +1,9 @@
-// Polyfill for networkFetch() API. Does not handle cross-origin
+// Polyfill for fetch() API. Does not handle cross-origin
 // requests, because it uses XHR to emulate.
 if (!('SameOriginResponse' in this))
     SameOriginResponse = function() { };
 
-function networkFetch(urlOrRequest) {
+function fetch(urlOrRequest) {
     return new Promise(function(resolver) {
         var url;
         var method = 'GET';

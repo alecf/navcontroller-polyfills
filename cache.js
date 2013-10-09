@@ -86,7 +86,7 @@ function Cache(name /*, url, url, ...*/) {
 // p2 = cache.match("http://google.com/");
 //
 // The add step may actually mean:
-// networkFetch("http://google.com/").then(saveToIDB)
+// fetch("http://google.com/").then(saveToIDB)
 //
 // But I think the effect we want is that p2 resolves after p1, which
 // is how IDB works. Not sure.
@@ -281,7 +281,7 @@ Cache.prototype._add = function(requests) {
     var cache = this;
     for (var i = 0; i < requests.length; ++i) {
         var request = _getRequest(requests[i]);
-        pending.push(networkFetch(request.url)
+        pending.push(fetch(request.url)
                      .then(cache._setResponse(request)));
     }
     return Promise.every.apply(Promise, pending);
