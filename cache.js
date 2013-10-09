@@ -43,6 +43,17 @@ CacheList.prototype.set = function(cache_name, cache) {
     return cache;
 };
 
+CacheList.prototype.values = function() {
+    var cacheList = this;
+    return Object.keys(cacheList.caches).map(function(key) {
+        return cacheList.caches[key];
+    });
+};
+
+CacheList.prototype.keys = function() {
+    return Object.keys(this.caches);
+};
+
 // translates a string or a request object into an object with a .url
 // property
 function _getRequest(urlOrRequest) {
@@ -86,7 +97,7 @@ function Cache(name /*, url, url, ...*/) {
 // p2 = cache.match("http://google.com/");
 //
 // The add step may actually mean:
-// networkFetch("http://google.com/").then(saveToIDB)
+// fetch("http://google.com/").then(saveToIDB)
 //
 // But I think the effect we want is that p2 resolves after p1, which
 // is how IDB works. Not sure.
@@ -231,18 +242,6 @@ Cache.prototype.match = function(url) {
             return cache._get(url);
         }).then(function(entry) {
             return entry.response;
-        })
-        // not sure we want a 'catch' at all here, but the
-        // current implementation of respondWith() doesn't really
-        // deal with failure.
-        .catch(function(ex) {
-            var response = new SameOriginResponse();
-            response.statusCode = 404;
-            response.statusText = "Not Found: " + ex;
-            lastex = ex;
-            response.method = '';
-            response.setBody(createBlob("Not found in cache: " + ex, "text/plain"));
-            return response;
         });
 };
 
@@ -281,7 +280,7 @@ Cache.prototype._add = function(requests) {
     var cache = this;
     for (var i = 0; i < requests.length; ++i) {
         var request = _getRequest(requests[i]);
-        pending.push(networkFetch(request.url)
+        pending.push(fetch(request.url)
                      .then(cache._setResponse(request)));
     }
     return Promise.every.apply(Promise, pending);
@@ -306,3 +305,5 @@ Cache.prototype.addResponse = function(urlOrRequest, response) {
         cache._set(request.url, { request: request, response: response });
     });
 };
+
+this.caches = new CacheList();
